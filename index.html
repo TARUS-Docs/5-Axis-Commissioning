@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TarusNC\Sproxy Overlay Documentation</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS based on Requirements -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Custom UI Classes provided in prompt */
+        .val {
+            @apply bg-blue-50 text-blue-900 border-2 border-blue-300 font-black px-2 py-0.5 rounded-md shadow-sm mx-1 text-[13px] tracking-wide inline-block;
+        }
+        .ui {
+            @apply font-bold text-slate-700;
+        }
+        kbd {
+            @apply bg-white border border-slate-300 text-slate-800 rounded-md px-2 py-0.5 text-xs font-sans font-bold shadow-[0_2px_0_rgba(203,213,225,1)] mx-1;
+        }
+        .badge {
+            @apply inline-block px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded border border-slate-300 bg-white text-slate-900 shadow-sm mb-4;
+        }
+
+        /* Sidebar scrollbar hiding */
+        .sidebar-scroll::-webkit-scrollbar { width: 6px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+        
+        /* Tab transition */
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-slate-800 antialiased flex h-screen overflow-hidden">
+
+    <!-- Fixed/Sticky Sidebar -->
+    <aside class="w-72 bg-slate-900 text-white flex-shrink-0 h-full flex flex-col shadow-xl z-20">
+        <div class="p-6 bg-slate-950 border-b border-slate-800">
+            <h1 class="text-xl font-black tracking-tight text-white leading-tight">
+                TarusNC<span class="text-primary-500">\</span>Sproxy
+            </h1>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Siemens Sinumerik 1<br>5 Axis ClayMill Startup</p>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto sidebar-scroll py-4 px-3 space-y-1" id="nav-menu">
+            <button onclick="switchTab('tab-startup')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-white bg-primary-600 shadow-md transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Initial Startup & EXOR
+            </button>
+            <button onclick="switchTab('tab-operate')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Operate Setup
+            </button>
+            <button onclick="switchTab('tab-axis')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                Axis Configuration
+            </button>
+            <button onclick="switchTab('tab-tuning')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                Tuning & Settings
+            </button>
+            <button onclick="switchTab('tab-tables')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                Lift & Fooke Tables
+            </button>
+            <button onclick="switchTab('tab-misc')" class="nav-link w-full flex items-center px-4 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all text-left">
+                <svg class="w-5 h-5 mr-3 opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Leveling, Legs & Misc
+            </button>
+        </nav>
+        
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+            Standard Operating Procedure <br>&copy; TarusNC Docs
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto bg-slate-50 relative scroll-smooth">
+        
+        <div class="max-w-4xl mx-auto py-10 px-8 pb-32">
+            
+            <!-- TAB 1: INITIAL STARTUP & EXOR -->
+            <div id="tab-startup" class="tab-content active">
+                <span class="badge">Phase 1</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Initial Startup & EXOR Remotes</h2>
+
+                <div class="bg-blue-50 border border-blue-200 border-l-4 border-l-primary-600 p-5 rounded-lg shadow-sm mb-8">
+                    <h4 class="font-bold text-primary-800 mb-1 flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Pre-requisite Checks
+                    </h4>
+                    <p class="text-sm text-primary-900">Before beginning, ensure you grab the electrical fire extinguisher from Glen's office. Double-check all bus bar phasing and wire phasing in each drive. Ensure wires are securely on prepare drive and ethernet cables are seated properly.</p>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">1</span>
+                        <h3 class="text-lg font-bold">X-Base Connection & J-Mobile</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Open <span class="ui">J-mobile</span>. To download the project, navigate to <span class="ui">Run</span> and connect to the X-base (the computer in the machine).</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>The password is <span class="val">Tarus123</span></li>
+                            <li>Update the package.</li>
+                            <li>Install run time.</li>
+                            <li>Download the project.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">2</span>
+                        <h3 class="text-lg font-bold">Ethernet Configuration</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Connect to the ethernet ports. Note that <span class="ui">Ethernet 0</span> and <span class="ui">Ethernet 1</span> have different IP addresses.</p>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Open Microsoft Edge. Make sure your local computer IP is in the <span class="val">192.168.0.#</span> range (try to ping before proceeding).</li>
+                            <li>Navigate to <span class="val">https://192.168.0.1/machine_config/</span></li>
+                            <li>Log in with Username: <span class="val">admin</span> and Password: <span class="val">admin</span></li>
+                            <li>Immediately change the password to <span class="val">Tarus123!</span></li>
+                            <li>Navigate to <span class="ui">Localization</span> and set Country Code to <span class="val">US</span>.</li>
+                            <li>Under <span class="ui">Network</span> > <span class="ui">Wireless networking</span>, set Enable to <span class="ui">Yes</span> and Safety wifi network to <span class="ui">Yes</span>.</li>
+                            <li>Under <span class="ui">Network interfaces</span>, configure the following:
+                                <ul class="list-disc pl-5 mt-2">
+                                    <li>Eth 0 &rarr; <span class="val">192.168.214.11</span></li>
+                                    <li>Eth 1 &rarr; <span class="val">192.168.214.12</span></li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">3</span>
+                        <h3 class="text-lg font-bold">Bridge, Router & Port Forwarding</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Change your browser URL to <span class="val">https://192.168.214.11/machine_config/</span> and navigate to <span class="ui">Service</span>.</p>
+                        
+                        <h5 class="font-bold text-slate-800 mt-4">Bridge/Switch</h5>
+                        <ul class="list-disc pl-5">
+                            <li><span class="ui">Enable</span> the Bridge/Switch. Make sure both ETH 0 and ETH 1 display as blue.</li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800 mt-4">Router / NAT / Port Forwarding</h5>
+                        <ul class="list-disc pl-5">
+                            <li><span class="ui">Enable</span> this service. Do not set standard port forwarding rules.</li>
+                            <li>Enable <span class="ui">1:1 Nat rules</span> with the following settings:</li>
+                        </ul>
+                        
+                        <div class="bg-slate-100 p-4 rounded-lg mt-2 border border-slate-200 grid grid-cols-2 gap-2 text-sm">
+                            <div class="font-semibold text-slate-700">Name:</div><div><span class="val">X5</span></div>
+                            <div class="font-semibold text-slate-700">Source:</div><div><span class="val">BR0</span></div>
+                            <div class="font-semibold text-slate-700">Source IP:</div><div><span class="val">192.168.214.99</span></div>
+                            <div class="font-semibold text-slate-700">Device IP:</div><div><span class="val">172.27.72.2</span></div>
+                            <div class="font-semibold text-slate-700">Port:</div><div class="italic text-slate-500">(Leave Empty)</div>
+                        </div>
+
+                        <h5 class="font-bold text-slate-800 mt-4">VNC Server</h5>
+                        <ul class="list-disc pl-5">
+                            <li><span class="ui">Enable Auto Start</span> for the VNC Server.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">4</span>
+                        <h3 class="text-lg font-bold">OS Management & Exor Setup</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Under <span class="ui">Management</span> (Version 1.3.937):</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><strong>Main OS:</strong> Browse for the <span class="val">.gtd</span> file (image) and the <span class="val">.md5</span> file.</li>
+                            <li><strong>Config OS:</strong> Browse for the <span class="val">.gz</span> file (image) and the <span class="val">.md5</span> file.</li>
+                        </ul>
+                        
+                        <p class="mt-4 font-bold text-slate-800">Remote Startup Setup:</p>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>During start up, spin the wheel for settings until you see the blue banner.</li>
+                            <li>Go to <span class="ui">System settings</span>. Login using Admin and password <span class="val">Tarus123!</span>.</li>
+                            <li>Under <span class="ui">Network interface</span> -> <span class="ui">Safety Wi-Fi</span>, enable both options.</li>
+                            <li>During <span class="ui">Service setting</span>: Go to SSH and Enable with AutoStart. Do the same for VNC, and ensure Port is <span class="val">5900</span>.</li>
+                            <li>Under <span class="ui">Display</span>: Set Brightness to <span class="val">10</span>, Screen time out to <span class="val">10</span>, and perform a screen calibration.</li>
+                        </ol>
+
+                        <p class="mt-4 font-bold text-slate-800">Start HMI Sequence:</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Set server address to <span class="val">172.27.72.1</span>.</li>
+                            <li>Check both <span class="ui">Auto connect at startup</span> and <span class="ui">Fit to screen size</span>.</li>
+                            <li>Install runtime on base unit (J-Mobile). Reboot machine.</li>
+                            <li>Connect remote: Locate UID for Base (found in System settings on computer). Description should be the machine number. Connect to base and hit <span class="ui">Start Pairing</span>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">5</span>
+                        <h3 class="text-lg font-bold">Remote Desktop Access</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>For the PC located in the tower:</p>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Set up password as <span class="val">Tarus123</span>.</li>
+                            <li>Search for and enable Remote Desktop Settings.</li>
+                            <li>From the Desk PC, open Remote Desktop Connection. Type in the target computer's name (Find in "This PC").</li>
+                            <li>Login User is <span class="val">Tarus</span>. Password is <span class="val">Tarus123</span> (or the one you just set up).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: OPERATE SETUP -->
+            <div id="tab-operate" class="tab-content">
+                <span class="badge">Phase 2</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Operate & Network Setup</h2>
+
+                <div class="bg-red-50 border border-red-200 border-l-4 border-l-red-600 p-5 rounded-lg shadow-sm mb-8">
+                    <h4 class="font-bold text-red-800 mb-1">Important Key Requirement</h4>
+                    <p class="text-sm text-red-900">If asked for a key Switch 0 when loading an archive, input the password <span class="val">SUNRISE</span>.</p>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">1</span>
+                        <h3 class="text-lg font-bold">Operate Configuration (Post-Archive Load)</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>After loading in an archive into Operate, proceed with the following setup on <span class="ui">Page 2</span>:</p>
+                        
+                        <h5 class="font-bold text-slate-800">License Activation</h5>
+                        <ul class="list-disc pl-5">
+                            <li>Turn ON <span class="ui">Access my machine opc/ua</span>.</li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800 mt-4">Network Settings</h5>
+                        <p>Navigate to <span class="ui">Opc/ua</span> > <span class="ui">Settings</span> > <span class="ui">Change</span>.</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li><strong>Company Network:</strong> <span class="ui">Check</span> this option.</li>
+                            <li><strong>System Network:</strong> <span class="ui">Uncheck</span> this option.</li>
+                            <li><strong>Additional Network #1:</strong> Ensure IP is set to <span class="val">192.168.214.200</span>.</li>
+                            <li><strong>TCP Port:</strong> Set to <span class="val">4841</span>.</li>
+                            <li><strong>Message Encryption:</strong> Check all boxes.</li>
+                            <li>Navigate to <span class="ui">Activation</span> > <span class="ui">Activate OPC UA</span> and reboot the machine.</li>
+                        </ul>
+                        <p class="text-sm italic text-slate-500 mt-2">Note: If operate is closed, it will not connect. Always ensure system time is correct.</p>
+                        <p>If you receive a Firewall Alert, ensure you click BOTH private and public networks.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">2</span>
+                        <h3 class="text-lg font-bold">Machine Setup & MCP Switches</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Change the name of the I/O (must be physically plugged into I/O).</li>
+                            <li><strong>STI Mod Estop (Red one):</strong> Change dip switches. Push both in <kbd>G2 -> G1</kbd> and <kbd>M -> A</kbd> <em>(Note: Not applicable on portables)</em>.</li>
+                            <li><strong>MCP Switches:</strong> Ensure switches <span class="val">7</span> and <span class="val">8</span> are <span class="ui">ON</span>. All rest must be OFF.</li>
+                            <li>Change the name of the machine within the interface.</li>
+                            <li>Check and load in all necessary licenses. Disable the external HMI.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">3</span>
+                        <h3 class="text-lg font-bold">Connecting the Remote</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Remember to keep switch 8 ON until connected.</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Make sure the big white switch is down.</li>
+                            <li>Check that the I/O unit is properly reacting to the prepared inputs from the remote.</li>
+                            <li>Ensure E-stops function correctly and can be cleared using the blue button.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: AXIS CONFIGURATION -->
+            <div id="tab-axis" class="tab-content">
+                <span class="badge">Phase 3</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Axis Calibration</h2>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">X</span>
+                        <h3 class="text-lg font-bold">X Motor Setup</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Make sure X1 and X2 are active. Verify X is counting properly before proceeding.</p>
+                        
+                        <h5 class="font-bold text-slate-800 mt-2">Start Motor Feedback</h5>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Set relative 0 using parameter <span class="val">34210</span>.</li>
+                            <li>Try to get full X positive limit.</li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800 mt-4">X on Scales</h5>
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Load in a K value in <span class="val">34300 (1)</span> (e.g., 192, 332, 368, 384).</li>
+                            <li>Go to encoder 2 and put in the K value (offset).</li>
+                            <li>Go into reference mode and reference it. If there is a negative change, alter <span class="val">p36100</span> to <span class="val">-10,000</span>. Repeat this 2-3 times to ensure it doesn't jump around. <em>(If encoder is jumping the wrong way, change <span class="val">34320 (1)</span>)</em>.</li>
+                            <li>Set <span class="val">34090 (1)</span> to <span class="val">0</span>.</li>
+                            <li>Go roughly to soft limit 0 and execute Reference +. Change <span class="val">p36100</span> back to <span class="val">-0.1</span>.</li>
+                            <li>Grab the number that populates when referencing from the desired zero position. Put it into <span class="val">34090</span> and re-reference.</li>
+                            <li>Jog back to 0 slowly. Do calculations on what the number is after reference: Measure distance between machine location and true zero. +/- that number from the value in <span class="val">34090</span> to establish true zero.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">Y</span>
+                        <h3 class="text-lg font-bold">Y Motor Setup</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <h5 class="font-bold text-slate-800">Y Motor Feedback</h5>
+                        <p>Ensure the hydraulic pump is ON. Verify the following parameters based on machine size:</p>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 mb-4">
+                            <div class="bg-slate-100 p-3 rounded text-center"><div class="text-xs text-slate-500 uppercase font-bold">SP1</div><div class="font-bold"><span class="val">1180</span><br><span class="text-xs font-normal">(Jumbo 1440)</span></div></div>
+                            <div class="bg-slate-100 p-3 rounded text-center"><div class="text-xs text-slate-500 uppercase font-bold">RP1</div><div class="font-bold"><span class="val">1100</span><br><span class="text-xs font-normal">(Jumbo 1080)</span></div></div>
+                            <div class="bg-slate-100 p-3 rounded text-center"><div class="text-xs text-slate-500 uppercase font-bold">SP2</div><div class="font-bold"><span class="val">1180</span><br><span class="text-xs font-normal">(Jumbo 1440)</span></div></div>
+                            <div class="bg-slate-100 p-3 rounded text-center"><div class="text-xs text-slate-500 uppercase font-bold">RP2</div><div class="font-bold"><span class="val">1100</span><br><span class="text-xs font-normal">(Jumbo 1080)</span></div></div>
+                        </div>
+
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Put starter at <span class="val">1.6</span> and flip breaker.</li>
+                            <li>Put Y on crane and Activate Y via <span class="val">p105</span>. Watch hydraulic tank and cycle pumps a couple times.</li>
+                            <li>Take down to 4mm (use 4mm allen wrench).</li>
+                            <li>Set <span class="val">34210</span> to zero. Ensure positive travel limit <span class="val">p36110</span> is set properly (e.g. <span class="val">2400.1</span> and <span class="val">-0.1</span>).</li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800 mt-4">Y on Scales</h5>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Change measuring system: <span class="ui">Setup</span> > <span class="ui">Drives system</span> > <span class="ui">Drives</span> > <span class="ui">Change</span>. Hit next step until you reach Encoder.</li>
+                            <li>Check Encoder 2. Change Encoder 2 to control unit.</li>
+                            <li>Go to <span class="ui">Axis assignment</span> > <span class="ui">Axis 2/Y</span>. Select Encoder 2 and Measuring system 2. Go through and set limits.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">Z</span>
+                        <h3 class="text-lg font-bold">Z Motor Setup</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Activate z motor via <span class="val">p105</span>. Make sure Z is counting the right direction.</li>
+                            <li>Set 0 with 6mm from hard stop. Match Z travel to desired travel.</li>
+                        </ul>
+                        <h5 class="font-bold text-slate-800 mt-2">Z Scales</h5>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Change measuring system to sys 2.</li>
+                            <li>Set limit to 0 and verify z travel.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">AC</span>
+                        <h3 class="text-lg font-bold">A/C Motors Setup</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>General limits: <span class="val">+/- 105.1</span> for A, <span class="val">+/- 180.1</span> for C. Move the A/C head by hand to confirm the correct axis is counting and in the right direction.</p>
+                        <p class="text-sm bg-slate-100 p-2 rounded"><em>Portables Exception:</em> For C rotation, look at the PLC I/O tags and put that number in parameter <span class="val">14510 (6)</span>.</p>
+                        
+                        <h5 class="font-bold text-slate-800 mt-4">Motor Feedback</h5>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Activate motor <span class="val">p105</span>. Hand move to roughly 0 degrees.</li>
+                            <li>Turn drives ON and commutate angle <span class="val">p1990</span>. Get a number close to zero.</li>
+                            <li>Move A/C to soft limit. If A is moving the wrong way, alter <span class="val">p32100</span>.</li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800 mt-4">A/C Scales</h5>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Before changing to measuring sys 2, put A/C to zero.</li>
+                            <li>Change to measuring sys 2, perform a Reference, and verify all limits.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">S</span>
+                        <h3 class="text-lg font-bold">Spindle</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Activate motor <span class="val">p105</span>.</li>
+                            <li>Commutate angle <span class="val">p1990</span>. <em>(Note: Portables do NOT commutate the spindles)</em>.</li>
+                            <li>Run at 10rpm. Ensure proper count direction (Clockwise from behind, counterclockwise in front).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: TUNING & SETTINGS -->
+            <div id="tab-tuning" class="tab-content">
+                <span class="badge">Phase 4</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Tuning & General Settings</h2>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">1</span>
+                        <h3 class="text-lg font-bold">Global Tuning & Circle Test</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Go through each axis (X, Y, Z, A, C) under <span class="ui">Inter Path</span>. Select Edit and Tune. Select ALL axis (excluding spindle) and hit Tune.</p>
+                        
+                        <h5 class="font-bold text-slate-800 mt-4">Circle Test Parameters</h5>
+                        <p>Perform the test on each pair (X/Y, X/Z, Y/Z) using the following:</p>
+                        <div class="bg-slate-100 p-4 rounded-lg mt-2 border border-slate-200 grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                            <div class="font-semibold text-slate-700">Radius:</div><div><span class="val">50.000mm</span></div><div></div>
+                            <div class="font-semibold text-slate-700">Feed Rate:</div><div><span class="val">5000.00mm</span></div><div></div>
+                            <div class="font-semibold text-slate-700">Multiplier:</div><div><span class="val">1</span></div><div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">2</span>
+                        <h3 class="text-lg font-bold">Passwords & Coolant Pumps</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>Set system passwords based on user levels:</p>
+                        <ul class="list-disc pl-5 mb-4">
+                            <li>Default Base: <span class="val">SUNRISE</span></li>
+                            <li>Manufacture: <span class="val">Tarus123</span></li>
+                            <li>Service: <span class="val">GMServ12</span></li>
+                            <li>Operator: <span class="val">Operator1</span></li>
+                        </ul>
+
+                        <h5 class="font-bold text-slate-800">Coolant Pump Specs</h5>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                                <h6 class="font-bold mb-2">Gen 3</h6>
+                                <p class="text-sm"><strong>SP1:</strong> 12 psi or 0.4gpm</p>
+                                <p class="text-sm"><strong>RP1:</strong> 7 psi or 0.05gpm</p>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 rounded p-4">
+                                <h6 class="font-bold mb-2">XL / Jumbo</h6>
+                                <p class="text-sm"><strong>SP1:</strong> 0.5 GPM | <strong>RP1:</strong> 0.25 GPM</p>
+                                <p class="text-sm"><strong>SP2:</strong> 100° | <strong>RP2:</strong> 80°</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">3</span>
+                        <h3 class="text-lg font-bold">Post Installation & Style Parameters</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p>After installation, reset X scales. If utilizing Dual Machines on the same rails: Put Machine A at true zero and Machine B roughly 4-6 inches away from it. Get travel on Machine B, minus 4-6 inches from limit to give to Machine A. Travel should be the same across both machines.</p>
+                        
+                        <p>Retune X: Set position gain (Kv factor) to <span class="val">0.75</span>.</p>
+
+                        <h5 class="font-bold text-slate-800 mt-4">Cut Style Parameters</h5>
+                        <div class="relative bg-slate-900 rounded-xl p-4 mb-6">
+                            <button onclick="copyCode(this)" class="absolute top-3 right-3 bg-slate-700 text-slate-300 hover:text-white px-3 py-1 rounded text-xs font-bold transition">Copy</button>
+                            <pre><code class="text-primary-300 text-sm font-mono">32410 [0] = 0.04
+32410 [1] = 0.08
+32431 [0] = 16
+32431 [1] = 8
+32431 [2] = 16 
+32431 [3] = 8
+32431 [4] = 1
+32431 [5] = 1
+32432 [0] = 16
+32432 [1] = 8
+32432 [2] = 16
+32432 [3] = 8
+32432 [4] = 1
+32432 [5] = 1</code></pre>
+                        </div>
+                        
+                        <p>Ensure MD <span class="val">14510</span> = <span class="val">11</span>. Set Jog Velocity: General SD <span class="val">41110</span> = <span class="val">20,000</span>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: TABLES -->
+            <div id="tab-tables" class="tab-content">
+                <span class="badge">Phase 5</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Lift & Fooke Tables</h2>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">1</span>
+                        <h3 class="text-lg font-bold">Lift Tables Base Configuration</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Go online at the table and ensure the network address matches Gen 3.</li>
+                            <li>Download <span class="ui">Cu_5</span>.</li>
+                            <li><strong>Lift 1:</strong> In Parameter view, verify P10 is "0 ready". In Function view > Technology function > Basic positioner > Referencing, set Absolute encoder to <span class="ui">Set</span>.</li>
+                            <li><strong>Lift 2:</strong> Ensure R21905 is <span class="val">0</span>. For R21902, cycle from <span class="val">0 &rarr; 1 &rarr; 0</span>.</li>
+                            <li><strong>Rotary:</strong> In Parameter view, verify P10 is "0 ready". In Function view > Referencing, hit <span class="ui">Set</span>. Save via blue floppy disk icon, go offline, upload, go back online, and release E-stop to test.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">2</span>
+                        <h3 class="text-lg font-bold">Lift Tables (Motors Engaged)</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ol class="list-decimal pl-5 space-y-2">
+                            <li>Retest motors and logic. Deactivate rotary (hit E-stop, check <span class="val">p105</span>).</li>
+                            <li>Ensure slave is roughly 2 inches higher than master. Have Mark/Dale connect the motors.</li>
+                            <li>Reference both motors (hit E-stop), then "Hit the sticks" to drive both motors up into slots.</li>
+                            <li>Once slave is touching, deactivate it (<span class="val">p105</span>) and drive master into the slot. Reactivate slave (E-stop).</li>
+                            <li>Set Limit to <span class="val">850,000</span>.
+                                <ul class="list-disc pl-5 mt-1">
+                                    <li>Lift 1: Reference Lu</li>
+                                    <li>Lift 2: Set limit <span class="val">21905</span>. Change <span class="val">21902</span> 0&rarr;1&rarr;0.</li>
+                                </ul>
+                            </li>
+                            <li>Take pins out, bring table down to fit into the slot, and verify. E-stop machine and reset zero for Lift 1 and Lift 2.</li>
+                            <li>Take fully up to limit, bring down to fit in pocket, reactivate rotary, set rotary 0, go fully up and test.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">3</span>
+                        <h3 class="text-lg font-bold">Fooke Table</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p class="italic text-sm text-slate-500 mb-2">* Same general procedure as a normal lift table, but there is no rotary component. *</p>
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Retest motors/logic. Ensure slave is 2 inches higher than master before connecting.</li>
+                            <li>Reference both motors, drive up into slots. Deactivate slave when touching, drive master in, reactivate slave.</li>
+                            <li>Set Limit to <span class="val">794,000</span>. Take pins out, bring table down to slot, have Mark check.</li>
+                            <li>E-stop machine, reset zero for both lifts. Take fully up, bring back down to pocket, and test.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 6: LEVELING, LEGS & MISC -->
+            <div id="tab-misc" class="tab-content">
+                <span class="badge">Phase 6</span>
+                <h2 class="text-3xl font-black text-slate-900 mb-8 tracking-tight">Testing, Legs & Portables</h2>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">1</span>
+                        <h3 class="text-lg font-bold">Weight Testing (r33)</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <p class="text-sm italic">If cutting quality is bad, look at parameter (r81).</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                            <div>
+                                <h6 class="font-bold border-b pb-2 mb-2">Without Weight</h6>
+                                <ul class="space-y-1 text-sm">
+                                    <li><strong>Motor 1:</strong> Up <span class="val">9.7%</span> | Down <span class="val">26.0%</span></li>
+                                    <li><strong>Motor 2:</strong> Up <span class="val">9.3%</span> | Down <span class="val">25.5%</span></li>
+                                    <li><strong>Rotary CCW:</strong> <span class="val">4.3%</span> | <strong>CW:</strong> <span class="val">4.2%</span></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h6 class="font-bold border-b pb-2 mb-2">With Weight</h6>
+                                <ul class="space-y-1 text-sm">
+                                    <li><strong>Motor 1:</strong> Up <span class="val">25.7%</span> | Down <span class="val">22.2%</span></li>
+                                    <li><strong>Motor 2:</strong> Up <span class="val">23.0%</span> | Down <span class="val">21.7%</span></li>
+                                    <li><strong>Rotary CCW:</strong> <span class="val">6.2%</span> | <strong>CW:</strong> <span class="val">5.7%</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-sm mt-4"><em>Go to assembly's computer to put in the final measurements.</em></p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+                    <div class="bg-primary-600 text-white p-4 flex items-center">
+                        <span class="text-3xl font-black mr-4 opacity-50">2</span>
+                        <h3 class="text-lg font-bold">Leveling Legs Limit</h3>
+                    </div>
+                    <div class="p-6 text-slate-600 space-y-4">
+                        <ul class="list-disc pl-5 space-y-2">
+                            <li>Go online (match IP address, either CU320 or old FW). Open parameterization.</li>
+                            <li>Open <span class="ui">Rotate & Optimize</span> for Leg 1. Slowly raise it in at 10 rpm while watching torque.</li>
+                            <li>Back off <span class="val">6000lu</span>. Put <span class="val">-6000lu</span> in at reference @ hard stop.</li>
+                            <li>Set limits to <span class="val">90170 lu</span> or 90.17mm.</li>
+                            <li>In Parameter view, change P971 to <span class="val">1</span>. If it doesn't revert to 0, manually change it back.</li>
+                            <li>Save via blue floppy, go offline, upload, cycle power off/on. Check limits with Tarus NC on their side via Auto Leave.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+                        <div class="bg-slate-800 text-white p-4 flex items-center">
+                            <h3 class="text-lg font-bold">DCC Charts Reference</h3>
+                        </div>
+                        <div class="p-6 text-slate-600 text-sm">
+                            <ul class="space-y-2">
+                                <li class="flex justify-between border-b pb-1"><span>On Delay Device</span> <span class="font-bold text-slate-900">PDE</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Off Delay Device</span> <span class="font-bold text-slate-900">PDF</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>AND Statement</span> <span class="font-bold text-slate-900">&</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>OR Statement</span> <span class="font-bold text-slate-900">>=1</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Edge Evaluator</span> <span class="font-bold text-slate-900">ETE</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Numerical Comparator</span> <span class="font-bold text-slate-900">NCM_D</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Set / Reset</span> <span class="font-bold text-slate-900">RSR</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Digital Inputs</span> <span class="font-bold text-slate-900">Or_50</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Dummy Blocks</span> <span class="font-bold text-slate-900">NOP1_B</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Not Moving</span> <span class="font-bold text-slate-900">NOT</span></li>
+                                <li class="flex justify-between border-b pb-1"><span>Drive Moving Flasher</span> <span class="font-bold text-slate-900">BF</span></li>
+                                <li class="flex justify-between pt-1"><span>Digital I/O Read</span> <span class="font-bold text-slate-900">NOP8_B</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+                        <div class="bg-slate-800 text-white p-4 flex items-center">
+                            <h3 class="text-lg font-bold">Portables Overview</h3>
+                        </div>
+                        <div class="p-6 text-slate-600 text-sm space-y-4">
+                            <p>Ohm out each motor exactly like Gen 3.</p>
+                            <h6 class="font-bold">Test Legs</h6>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Plug into the CU32 (<span class="val">127 port</span>) and go online.</li>
+                                <li>Open each leg and go to <span class="ui">Rotate and Optimize</span>.</li>
+                                <li>Parameter <span class="val">1990</span>: Change 0 &rarr; 1 to take the commutation angle.</li>
+                                <li>Parameter <span class="val">1520</span> (High Torque): Change 3.32 &rarr; 1.32. Once hit, revert to 3.32.</li>
+                                <li>Parameter <span class="val">1521</span> (Low Torque): Change -3.32 &rarr; -1.32. Once hit, revert to -3.32.</li>
+                                <li>Under <span class="ui">Rotate and Optimize</span> jog back until torque spike, set limit there.</li>
+                                <li>Use parameter <span class="val">971</span> to save drive parameters 0-1 (Save RAM to ROM).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Tab Switching & Copy Code Logic -->
+    <script>
+        function switchTab(tabId) {
+            // Hide all tabs
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active state from nav links
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.classList.remove('bg-primary-600', 'text-white', 'shadow-md');
+                link.classList.add('text-slate-400');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active state to clicked button
+            const clickedBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            if(clickedBtn) {
+                clickedBtn.classList.remove('text-slate-400');
+                clickedBtn.classList.add('bg-primary-600', 'text-white', 'shadow-md');
+            }
+            
+            // Scroll top
+            document.querySelector('main').scrollTop = 0;
+        }
+
+        function copyCode(btn) {
+            const preElement = btn.nextElementSibling;
+            const textToCopy = preElement.innerText;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.classList.replace('bg-slate-700', 'bg-green-600');
+                btn.classList.replace('text-slate-300', 'text-white');
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-600', 'bg-slate-700');
+                    btn.classList.replace('text-white', 'text-slate-300');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                
+                // Fallback for older browsers / iframe restrictions
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = textToCopy;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    
+                    const originalText = btn.innerText;
+                    btn.innerText = 'Copied!';
+                    btn.classList.replace('bg-slate-700', 'bg-green-600');
+                    btn.classList.replace('text-slate-300', 'text-white');
+                    
+                    setTimeout(() => {
+                        btn.innerText = originalText;
+                        btn.classList.replace('bg-green-600', 'bg-slate-700');
+                        btn.classList.replace('text-white', 'text-slate-300');
+                    }, 2000);
+                } catch(e) {
+                    alert('Copy failed. Please manually select and copy the text.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
